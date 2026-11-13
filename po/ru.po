@@ -10798,8 +10798,40 @@ msgstr "Проповедь на весь экран"
 msgid "Time since you began"
 msgstr "Время с начала"
 
-msgid "↑ ↓ scroll · ← → headings · Esc leave"
-msgstr "↑ ↓ прокрутка · ← → заголовки · Esc выход"
+msgid ""
+"↑ ↓ scroll · ← → headings · C clock · + − time left · Esc leave"
+msgstr ""
+"↑ ↓ прокрутка · ← → заголовки · C часы · + − осталось · Esc выход"
+
+msgid "Time of day"
+msgstr "Время суток"
+
+msgid "Time left"
+msgstr "Осталось времени"
+
+msgid "Time over"
+msgstr "Сверх времени"
+
+msgid "{time} left"
+msgstr "осталось {time}"
+
+msgid "{time} over"
+msgstr "превышено на {time}"
+
+msgid "Duplicate this sermon"
+msgstr "Дублировать эту проповедь"
+
+msgid "{title} (copy)"
+msgstr "{title} (копия)"
+
+msgid "{source}, on {reference}"
+msgstr "{source}, на {reference}"
+
+msgid "{book} has no chapter {n}"
+msgstr "{book}: нет главы {n}"
+
+msgid "{reference} has no verse {n}"
+msgstr "{reference}: нет стиха {n}"
 
 #: window.py
 msgid "Go straight to a reference"

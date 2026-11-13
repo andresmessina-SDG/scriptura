@@ -451,6 +451,28 @@ def append(sermon_id: str, text: str,
     return get(sermon_id)
 
 
+def duplicate(sermon_id: str, title: str) -> str | None:
+    """A new sermon holding a copy of this one's words, under `title`.
+    Returns its id, or None when there is nothing to copy or the write
+    failed.
+
+    What carries over is what was written: the idea, the body, the passages,
+    the tags and the series. What does not is what happened to the first
+    one: the days it was preached, its part in the series and the Sunday it
+    was begun for.
+    """
+    source = get(sermon_id)
+    if source is None:
+        return None
+    series = source['series']
+    copy_id = new_id()
+    saved = save(copy_id, title=title, idea=source['idea'],
+                 body=source['body'], anchors=source['anchors'],
+                 series={'name': series['name']} if series else None,
+                 preached=[], tags=source['tags'])
+    return copy_id if saved else None
+
+
 def delete(sermon_id: str) -> Sermon | None:
     """Remove a sermon, returning it so the caller can offer an undo."""
     data = _load()

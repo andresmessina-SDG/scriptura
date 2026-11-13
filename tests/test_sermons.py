@@ -291,3 +291,19 @@ def test_replace_all_with_nothing_empties_the_store(store):
     _sower()
     assert sermons.replace_all({})
     assert sermons.all_sermons() == []
+
+
+def test_a_duplicate_carries_the_words_and_not_the_history(store):
+    _sower(series={'name': 'Parables', 'part': 2},
+           preached=['2026-02-08'], tags=['kingdom'],
+           collect='anglican:sexagesima')
+    copy_id = sermons.duplicate('s1', 'The Sower (copy)')
+    copy, source = sermons.get(copy_id), sermons.get('s1')
+    assert copy_id != 's1'
+    assert copy['title'] == 'The Sower (copy)'
+    for field in ('idea', 'body', 'anchors', 'tags'):
+        assert copy[field] == source[field]
+    assert copy['series'] == {'name': 'Parables', 'part': None}
+    assert copy['preached'] == [] and copy['collect'] is None
+    assert source['preached'] == ['2026-02-08']
+    assert sermons.duplicate('nope', 'x') is None

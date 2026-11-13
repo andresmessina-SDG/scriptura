@@ -500,6 +500,39 @@ def verse_count(book, chapter, module_name=None):
         return 1
 
 
+@functools.lru_cache(maxsize=2048)
+def widest_counts(book, chapter):
+    """(chapters, verses): the most chapters `book` has under any
+    versification, and the most verses `chapter` has under any that holds
+    it — None when none does.
+
+    For asking whether a reference can exist at all. Not every Bible counts
+    as the KJV does: Daniel 3 has 30 verses there and 100 in the Vulgate,
+    Malachi three chapters or four, 3 John fourteen verses or fifteen.
+    """
+    vk = Sword.VerseKey()
+    vk.setText(f'{book} 1:1')
+    osis = str(vk.getOSISRef()).split('.')[0]
+    chapters, verses = 0, None
+    systems = Sword.VersificationMgr.getSystemVersificationMgr() \
+        .getVersificationSystems()
+    for system in systems:
+        vk = Sword.VerseKey()
+        vk.setVersificationSystem(
+            system.c_str() if hasattr(system, 'c_str') else str(system))
+        vk.setText(f'{book} 1:1')
+        # A system without the book (the Hebrew ones have no John) clamps
+        # to another, and would answer with that one's counts.
+        if str(vk.getOSISRef()).split('.')[0] != osis:
+            continue
+        held = vk.getChapterMax()
+        chapters = max(chapters, held)
+        if chapter <= held:
+            vk.setText(f'{book} {chapter}:1')
+            verses = max(verses or 0, vk.getVerseMax())
+    return chapters, verses
+
+
 def verse_count_in(module_name, book, chapter):
     """verse_count for a book that may be outside the 66 — see
     chapter_count_in for why the module has to be named."""

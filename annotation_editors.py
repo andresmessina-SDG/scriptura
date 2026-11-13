@@ -40,6 +40,7 @@ from manuscript_find import FindBar
 import motion
 import sermon_delivery
 import sermons
+import sword_bridge
 import writing_page
 from writing_page import (_BODY_MARGIN, _LIST_INSET, _LIVE, _SheetScroll,
                           _STYLES, _WritingView, WritingPageMixin,
@@ -49,6 +50,29 @@ from writing_page import (_BODY_MARGIN, _LIST_INSET, _LIVE, _SheetScroll,
 def N_(message):
     """No-op gettext marker for module-level data; translated at display."""
     return message
+
+
+def reference_fault(book, chapter, verse):
+    """What is wrong with a reference that points at no verse, or ''.
+
+    "John has no chapter 22", "John 3 has no verse 40". The parser asks
+    only that the book be one it knows, so without this a slip of the
+    finger was underlined as a door and opened on some other verse.
+
+    Wrong only when no versification has the verse: the writer's Bible may
+    count as the Vulgate or the Synodal does, and a right reference must
+    never be called wrong. A book outside the 66 is not counted at all.
+    """
+    if book not in sword_bridge._ALL_BOOKS:
+        return ''
+    chapters, verses = sword_bridge.widest_counts(book, chapter)
+    if chapter > chapters:
+        return _('{book} has no chapter {n}').format(
+            book=book_label(book), n=chapter)
+    if verse is not None and verses is not None and verse > verses:
+        return _('{reference} has no verse {n}').format(
+            reference=f'{book_label(book)} {chapter}', n=verse)
+    return ''
 
 
 #: The four highlight hues, their display names and their swatch classes —
@@ -731,6 +755,9 @@ class _ProseEditor(WritingPageMixin, _Editor):
         self._restyle = Autosave(self._restyle_references,
                                  delay_ms=motion.RESTYLE_DELAY_MS)
         self.refs = []
+        #: The references that point at no verse, as (start, end, what is
+        #: wrong) — marked as slips, and never doors.
+        self.dead_refs: list[tuple[int, int, str]] = []
         #: The markers that hang in the margin, by marker text, and what the
         #: column and face were when their indents were measured.
         self._hangs: dict[str, Gtk.TextTag] = {}
@@ -1509,6 +1536,8 @@ class _ProseEditor(WritingPageMixin, _Editor):
         # A reference is a door, so it looks like one: the accent ink and an
         # underline, the app's own link vocabulary.
         buf.create_tag('md-ref', underline=Pango.Underline.SINGLE)
+        # And one that leads nowhere looks like the slip it is.
+        buf.create_tag('md-ref-dead', underline=Pango.Underline.ERROR)
 
     def _count_words(self, buf):
         """How long the entry is, for the one reader who needs to know.
@@ -1613,12 +1642,20 @@ class _ProseEditor(WritingPageMixin, _Editor):
         self._count_words(buf)
         start, end = buf.get_bounds()
         buf.remove_tag_by_name('md-ref', start, end)
+        buf.remove_tag_by_name('md-ref-dead', start, end)
         text = buf.get_text(start, end, True)
         # Kept so a click can be answered without parsing again, and so the
         # answer is the one the reader can see underlined.
-        self.refs = journal_markup.reference_spans(text, self._names())
-        for a, b, _book, _ch, _v in self.refs:
-            buf.apply_tag_by_name('md-ref', buf.get_iter_at_offset(a),
+        self.refs, self.dead_refs = [], []
+        for span in journal_markup.reference_spans(text, self._names()):
+            a, b, book, chapter, verse = span
+            fault = reference_fault(book, chapter, verse)
+            if fault:
+                self.dead_refs.append((a, b, fault))
+            else:
+                self.refs.append(span)
+            buf.apply_tag_by_name('md-ref-dead' if fault else 'md-ref',
+                                  buf.get_iter_at_offset(a),
                                   buf.get_iter_at_offset(b))
 
     def _on_body_click(self, gesture, n_press, x, y):
@@ -1631,9 +1668,13 @@ class _ProseEditor(WritingPageMixin, _Editor):
         the way a link in Pages or Google Docs answers a click. Ctrl+click
         is the shortcut past the card, and the card says so.
         """
-        if n_press != 1 or not self.refs:
+        if n_press != 1 or not (self.refs or self.dead_refs):
             return
         if self.body.get_buffer().get_has_selection():
+            return
+        dead = self._span_at(x, y, self.dead_refs)
+        if dead is not None:
+            self._offer_ref(dead, fault=dead[2])
             return
         hit = self._ref_at(x, y)
         if hit is None:
@@ -1647,7 +1688,10 @@ class _ProseEditor(WritingPageMixin, _Editor):
 
     def _ref_at(self, x, y):
         """The reference under widget coordinates (x, y), or None."""
-        if not self.refs:
+        return self._span_at(x, y, self.refs)
+
+    def _span_at(self, x, y, among):
+        if not among:
             return None
         bx, by = self.body.window_to_buffer_coords(
             Gtk.TextWindowType.WIDGET, int(x), int(y))
@@ -1655,7 +1699,7 @@ class _ProseEditor(WritingPageMixin, _Editor):
         if not ok:
             return None
         offset = it.get_offset()
-        for span in self.refs:
+        for span in among:
             if span[0] <= offset < span[1]:
                 return span
         return None
@@ -1994,8 +2038,13 @@ class SermonEditor(_ProseEditor):
         buf = self.body.get_buffer()
         # True: markers folded out of sight are still the sermon.
         body = buf.get_text(buf.get_start_iter(), buf.get_end_iter(), True)
+        series = self._series_value() or {}
+        part = series.get('part')
         shown = ((self.row or {}).get('id'), self.title.get_text().strip(),
-                 body)
+                 body, self.idea.get_text().strip(),
+                 ' · '.join(p for p in (
+                     series.get('name'),
+                     _('Part {n}').format(n=part) if part else '') if p))
         open_on, win = getattr(self, '_delivery', (None, None))
         # Still a toplevel, or closed: 'destroy' never comes while this
         # attribute holds the window, so it cannot say.
@@ -2004,7 +2053,8 @@ class SermonEditor(_ProseEditor):
                 win.present()
                 return win
             win.close()
-        win = sermon_delivery.DeliveryWindow(shown[1], body,
+        win = sermon_delivery.DeliveryWindow(shown[1], body, idea=shown[3],
+                                             series=shown[4],
                                              transient_for=self.get_root())
         self._delivery = (shown, win)
         win.present()

@@ -439,10 +439,14 @@ def build_study_menu(pane, verses, x, y, anchor=None):
     # "As an image…" and not "Share as image…": the parent already says
     # share, and a page that repeats its own parent reads as a mistake. The
     # sheet it opens is still titled Share as image.
-    card = _menu_row('scriptura-image-x-generic-symbolic', _('As an image…'))
-    card.connect('clicked', lambda b: export_dialog.share_as_image(
-        pane, verses, popover))
-    share_page.append(card)
+    # A card is a verse of Scripture in the house setting, with a drop cap
+    # and a heading: a commentator's page of notes is not one.
+    if not passage_export.is_commentary(pane.module):
+        card = _menu_row('scriptura-image-x-generic-symbolic',
+                         _('As an image…'))
+        card.connect('clicked', lambda b: export_dialog.share_as_image(
+            pane, verses, popover))
+        share_page.append(card)
     printing = _menu_row('scriptura-document-print-symbolic', _('Print…'))
     printing.connect('clicked', lambda b: passage_print.print_passage(
         pane, verses, popover))
@@ -564,11 +568,10 @@ def copy_verse(pane, verses, popover):
     popover.popdown()
     if not verses:
         return
-    chapter_verses = content.load_chapter(pane.module, pane.book, pane.chapter)
-    verse_map = {v: html for v, html in chapter_verses}
     lines = []
-    for v in sorted(set(verses)):
-        plain = passage_export.quote_text(verse_map.get(v, ''))
+    for v, html in passage_export.passage_rows(
+            pane.module, pane.book, pane.chapter, verses):
+        plain = passage_export.quote_text(html)
         line_ref = passage_export.rendered_reference(
             pane.module, pane.book, pane.chapter, [v], localized=True)
         lines.append(f'{line_ref}  {plain}')
@@ -912,30 +915,67 @@ def _open_sermons_on(pane, parent_popover):
     GLib.idle_add(lambda: (root._open_sermons_on(book, chapter), GLib.SOURCE_REMOVE)[1])
 
 
-def collected_quote(pane, verses):
-    """(markdown, anchor) for the verses selected in `pane`.
+def _selected_comment(pane):
+    """The words selected in a commentary pane, or ''.
+
+    A commentator's note on one verse can run to a page, and what a sermon
+    wants of it is a sentence. In a Bible the door takes whole verses
+    whatever is selected: half a verse under a verse's reference misquotes.
+    """
+    buf = getattr(pane, '_buffer', None)
+    if (buf is None or not buf.get_has_selection()
+            or not passage_export.is_commentary(pane.module)):
+        return ''
+    start, end = buf.get_selection_bounds()
+    return ' '.join(buf.get_text(start, end, False).split())
+
+
+def collected_quote(pane, verses, words=''):
+    """(markdown, anchor) for the verses selected in `pane` — quoting
+    `words` when given, and the verses' whole text when not.
 
     The form a collected passage takes in a manuscript: the words as a
     blockquote, then the reference — which the body's own parser turns back
     into a link, because it is spelled the way the reader's language spells
     it.
 
-    App space for the anchor, the module's own numbering for the text: the
-    pane speaks its module, and a Synodal psalter's verse 1 is app verse 0.
+    The pane speaks its module's numbering and `verses` arrive in it; the
+    anchor and the reference written are both app space.
+
+    From a commentary the words are the commentator's, and the line says
+    so: "— Matthew Henry (Concise), on John 3:16".
     """
-    chapter_verses = content.load_chapter(pane.module, pane.book,
-                                          pane.chapter)
-    verse_map = {v: html for v, html in chapter_verses}
     verses = sorted(set(verses))
-    words = ' '.join(
-        sword_bridge.plain_text(verse_map.get(v, ''))
-        for v in verses).strip()
-    ref = passage_export.format_reference(
-        book_label(pane.book), pane.chapter, verses, prose=True)
+    rows = passage_export.passage_rows(pane.module, pane.book, pane.chapter,
+                                       verses)
+    commentary = passage_export.is_commentary(pane.module)
+    if commentary:
+        # A note is cited by every verse it is filed under: one chosen from
+        # Matthew Henry on John 3:1-8 is a quotation "on John 3:1–8".
+        notes = {str(html) for _v, html in rows if str(html).strip()}
+        verses = sorted(set(verses) | {
+            v for v, html in content.load_chapter(
+                pane.module, pane.book, pane.chapter)
+            if str(html) in notes})
+    words = words or ' '.join(
+        sword_bridge.plain_text(html) for _v, html in rows).strip()
     app = [annotations.app_verse(pane.module, pane.book, pane.chapter, v)
            for v in verses]
     anchor = {'book': pane.book, 'chapter': pane.chapter,
               'verses': [v for v in app if v is not None]}
+    # The reference is written in app numbering, as the anchor is: it is a
+    # link in the body, and a link is read in that numbering. A Synodal
+    # Psalm 51 prints its first verse as 3, and written "51:3" the link
+    # opened two verses below the words quoted. A psalm's title line is
+    # verse 0 there, and is cited as verse 1.
+    cited = sorted({max(v, 1) for v in anchor['verses']}) or verses
+    ref = passage_export.format_reference(
+        book_label(pane.book), pane.chapter, cited, prose=True)
+    if words and commentary:
+        # A commentator's words are not the verse's: without the name the
+        # sermon quoted Matthew Henry as John 3:16.
+        ref = _('{source}, on {reference}').format(
+            source=sword_bridge.display_name(pane.module), reference=ref)
     text = f'> {words} — {ref}' if words else ref
     return text, anchor
 
@@ -943,7 +983,7 @@ def collected_quote(pane, verses):
 def _collect_verses(pane, verses, sermon_id, parent_popover):
     """Add the selected verses to a sermon, from the reading page."""
     parent_popover.popdown()
-    text, anchor = collected_quote(pane, verses)
+    text, anchor = collected_quote(pane, verses, _selected_comment(pane))
     root = pane.view.get_root()
     if root is None or not hasattr(root, 'collect_into_sermon'):
         return

@@ -1,8 +1,9 @@
 """The sermon delivery view: the manuscript full-screen, to preach from.
 
 MANUSCRIPT_RESEARCH §8.6. What every dedicated sermon tool ships, and what
-this one keeps: large type and nothing else on screen, an elapsed timer, and
-the preacher's own bracketed cues set apart from what is said. What it
+this one keeps: large type and nothing else on screen, a clock, the sermon's
+series and big idea above its first words, and the preacher's own bracketed
+cues set apart from what is said. What it
 refuses: a teleprompter that scrolls on a clock and preaches the sermon for
 you. The preacher scrolls.
 
@@ -41,6 +42,10 @@ _MEASURE_EMS = 22
 _MEASURE_FACE = 'Noto Serif'
 
 
+#: One press of + or − on the time allowed, in minutes.
+_ALLOW_STEP = 5
+
+
 def _elapsed(seconds):
     """'4:07', or '1:04:07' past the hour."""
     minutes, secs = divmod(int(seconds), 60)
@@ -53,19 +58,24 @@ def _elapsed(seconds):
 class DeliveryWindow(Adw.Window):
     """One manuscript, full-screen, until Esc."""
 
-    def __init__(self, title, body, **kw):
+    def __init__(self, title, body, idea='', series='', **kw):
         super().__init__(**kw)
         self.add_css_class('sermon-delivery')
         self.set_title(title or _('Sermon'))
         self._title = title
         self._started = time.monotonic()
         self._size = 0
+        # The clock: time since the start, or the time of day (C). Minutes
+        # allowed, once set (+ −), turn the first into time left. Neither is
+        # stored: the same sermon is given forty minutes one Sunday and
+        # twenty at a funeral.
+        self._wall = False
+        self._allowed = 0
 
         self._place = Gtk.Label(xalign=0, hexpand=True,
                                 ellipsize=Pango.EllipsizeMode.END)
         self._clock = Gtk.Label(label=_elapsed(0))
         self._clock.add_css_class('delivery-clock')
-        self._clock.set_tooltip_text(_('Time since you began'))
         top = Gtk.Box(spacing=24)
         top.add_css_class('delivery-top')
         top.append(self._place)
@@ -78,6 +88,21 @@ class DeliveryWindow(Adw.Window):
         buf = self._view.get_buffer()
         self._install_tags(buf)
         text, spans = journal_markup.for_delivery(body)
+        # The series, the title and the big idea, above the first words: the
+        # one claim the preacher must not lose is the last thing read before
+        # beginning. Only when there is a series or an idea to show — the
+        # title alone is already in the line above.
+        head = [(line, tag) for line, tag in ((series, 'delivery-series'),
+                                              (title, 'delivery-title'),
+                                              (idea, 'delivery-idea'))
+                if line] if (series or idea) else []
+        lead = ''.join(line + '\n' for line, _tag in head)
+        spans = [(a + len(lead), b + len(lead), tag) for a, b, tag in spans]
+        at = 0
+        for line, tag in head:
+            spans.append((at, at + len(line) + 1, tag))
+            at += len(line) + 1
+        text = lead + text
         buf.set_text(text)
         for a, b, tag in spans:
             if tag != 'md-table':
@@ -101,8 +126,10 @@ class DeliveryWindow(Adw.Window):
             self._scroll.get_vadjustment().connect(
                 signal, lambda _a: self._sync_place())
 
-        foot = Gtk.Label(label=_('↑ ↓ scroll · ← → headings · Esc leave'),
-                         xalign=0)
+        foot = Gtk.Label(
+            label=_('↑ ↓ scroll · ← → headings · C clock · + − time left'
+                    ' · Esc leave'),
+            xalign=0, ellipsize=Pango.EllipsizeMode.END)
         foot.add_css_class('delivery-foot')
 
         page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
@@ -122,6 +149,7 @@ class DeliveryWindow(Adw.Window):
         self.add_controller(keys)
 
         self._tick = GLib.timeout_add_seconds(1, self._on_tick)
+        self._on_tick()
         self.connect('close-request', self._on_close)
         self._sync_place()
         self.fullscreen()
@@ -143,6 +171,14 @@ class DeliveryWindow(Adw.Window):
         # italic, the colour nothing else on this page is.
         buf.create_tag('md-cue', style=Pango.Style.ITALIC,
                        foreground_rgba=_rgba('#c9a15a'))
+        # The head. The series in the grey of the line above, the idea in
+        # italic with room under it before the sermon begins.
+        buf.create_tag('delivery-series', scale=0.7,
+                       foreground_rgba=_rgba('#9a9287'))
+        buf.create_tag('delivery-title', weight=Pango.Weight.BOLD, scale=1.4,
+                       pixels_below_lines=6)
+        buf.create_tag('delivery-idea', style=Pango.Style.ITALIC,
+                       pixels_below_lines=28)
 
     def _fit(self):
         """Size the type and the measure to the screen the window fills.
@@ -285,14 +321,42 @@ class DeliveryWindow(Adw.Window):
             self._to_heading(1)
         elif keyval == Gdk.KEY_Left:
             self._to_heading(-1)
+        elif keyval in (Gdk.KEY_c, Gdk.KEY_C):
+            self._wall = not self._wall
+            self._on_tick()
+        elif keyval in (Gdk.KEY_plus, Gdk.KEY_equal, Gdk.KEY_KP_Add):
+            self._allow(_ALLOW_STEP)
+        elif keyval in (Gdk.KEY_minus, Gdk.KEY_KP_Subtract):
+            self._allow(-_ALLOW_STEP)
         else:
             return False
         return True
 
     # ── The clock ───────────────────────────────────────────────────────
 
+    def _allow(self, minutes):
+        """Give the sermon `minutes` more, or fewer; none is no limit."""
+        self._allowed = max(0, self._allowed + minutes)
+        self._wall = False
+        self._on_tick()
+
+    def _clock_text(self):
+        """(what the clock says, what it is counting)."""
+        if self._wall:
+            return time.strftime('%H:%M'), _('Time of day')
+        spent = time.monotonic() - self._started
+        if not self._allowed:
+            return _elapsed(spent), _('Time since you began')
+        left = self._allowed * 60 - spent
+        if left >= 0:
+            return (_('{time} left').format(time=_elapsed(left)),
+                    _('Time left'))
+        return _('{time} over').format(time=_elapsed(-left)), _('Time over')
+
     def _on_tick(self):
-        self._clock.set_label(_elapsed(time.monotonic() - self._started))
+        text, what = self._clock_text()
+        self._clock.set_label(text)
+        self._clock.set_tooltip_text(what)
         return GLib.SOURCE_CONTINUE
 
     def _on_close(self, _win):

@@ -219,6 +219,33 @@ def _md(text: str, markdown: bool) -> str:
     return text.replace('\\', '\\\\').replace('<', '\\<').replace('>', '\\>')
 
 
+def is_commentary(module: str) -> bool:
+    return bool(sword_bridge.module_type(module) == 'Commentaries')
+
+
+def passage_rows(module: str, book: str, chapter: int,
+                 verses: list[int] | None = None) -> list[tuple[int, Any]]:
+    """(verse, html) for the chosen verses, or for the chapter.
+
+    A commentary files one note under every verse it covers — Matthew
+    Henry's on John 3:1-8 is there eight times — so three verses of it
+    chosen were the same note copied, exported or printed three times.
+    Each note once, under the first verse chosen that holds it.
+    """
+    wanted = set(verses) if verses else None
+    rows = [(v, html) for v, html in content.load_chapter(module, book, chapter)
+            if wanted is None or v in wanted]
+    if not is_commentary(module):
+        return rows
+    seen: set[str] = set()
+    once = []
+    for v, html in rows:
+        if str(html) not in seen:
+            seen.add(str(html))
+            once.append((v, html))
+    return once
+
+
 def verse_text(module: str, book: str, chapter: int,
                verses: list[int] | None = None) -> str:
     """The passage as one run of plain prose, verse numbers left out.
@@ -226,11 +253,10 @@ def verse_text(module: str, book: str, chapter: int,
     What a card is set in: a card is a quotation, and a quotation carries its
     reference underneath rather than numerals through the middle of it.
     """
-    wanted = set(verses) if verses else None
     return ' '.join(
         _plain(html)
-        for verse, html in content.load_chapter(module, book, chapter)
-        if wanted is None or verse in wanted).strip()
+        for _verse, html in passage_rows(module, book, chapter,
+                                         verses)).strip()
 
 
 def chapter_verses(module: str, book: str, chapter: int) -> list[int]:
@@ -460,10 +486,9 @@ def build(module: str, book: str, chapter: int,
     A layer whose data is not installed contributes nothing at all — no
     heading, no note of absence. The reader knows what they have.
     """
-    rendered = content.load_chapter(module, book, chapter)
     wanted = set(verses) if verses else None
-    rows = [(v, quote_text(t)) for v, t in rendered
-            if wanted is None or v in wanted]
+    rows = [(v, quote_text(t))
+            for v, t in passage_rows(module, book, chapter, verses)]
     numbers = [v for v, _t in rows]
     heading = rendered_reference(module, book, chapter, verses if wanted else None,
                                  version=version or version_label(module))

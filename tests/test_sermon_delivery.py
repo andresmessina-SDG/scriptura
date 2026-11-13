@@ -153,6 +153,56 @@ def test_an_untitled_sermon_is_named_sermon(display):
         win.destroy()
 
 
+def test_the_series_and_the_big_idea_stand_above_the_first_words(display):
+    win = sermon_delivery.DeliveryWindow(
+        'The Sower', _SERMON, idea='The soil is the question.',
+        series='Parables · Part 2')
+    try:
+        buf = win._view.get_buffer()
+        text = buf.get_text(buf.get_start_iter(), buf.get_end_iter(), True)
+        body = journal_markup.for_delivery(_SERMON)[0]
+        assert text == ('Parables · Part 2\nThe Sower\n'
+                        'The soil is the question.\n' + body)
+
+        def tags_at(word):
+            at = buf.get_iter_at_offset(text.index(word) + 1)
+            return [t.get_property('name') for t in at.get_tags()]
+        assert tags_at('Parables') == ['delivery-series']
+        assert tags_at('The soil') == ['delivery-idea']
+        # The sermon's own tags moved down with its words.
+        assert 'md-cue' in tags_at('[pause]')
+        assert [name for _m, name in win._headings] == ['The Sower',
+                                                        'The path']
+    finally:
+        win.destroy()
+
+
+def test_the_clock_tells_the_time_of_day_or_the_time_left(
+        display, monkeypatch):
+    from gi.repository import Gdk
+    now = [1000.0]
+    monkeypatch.setattr(sermon_delivery.time, 'monotonic', lambda: now[0])
+    monkeypatch.setattr(sermon_delivery.time, 'strftime', lambda f: '11:42')
+    win = sermon_delivery.DeliveryWindow('The Sower', _SERMON)
+    try:
+        now[0] += 247
+        win._on_tick()
+        assert win._clock.get_label() == '4:07'
+        win._on_key(None, Gdk.KEY_c, 0, 0)
+        assert win._clock.get_label() == '11:42'
+        # Setting a length leaves the time of day: it was asked for.
+        win._on_key(None, Gdk.KEY_plus, 0, 0)
+        assert win._clock.get_label() == '0:53 left'
+        now[0] += 60
+        win._on_tick()
+        assert win._clock.get_label() == '0:07 over'
+        win._on_key(None, Gdk.KEY_minus, 0, 0)
+        win._on_key(None, Gdk.KEY_minus, 0, 0)
+        assert win._clock.get_label() == '5:07'
+    finally:
+        win.destroy()
+
+
 # ── The door, in the sermon editor ──────────────────────────────────────────
 
 def test_the_sermon_editor_opens_the_view_on_its_own_manuscript(
@@ -263,3 +313,26 @@ def _children(widget):
     while child is not None:
         yield child
         child = child.get_next_sibling()
+
+
+def test_duplicate_opens_a_copy_and_leaves_the_first_alone(
+        display, monkeypatch, tmp_path):
+    import annotations_window
+    import sermons
+    from gi.repository import Gtk
+    monkeypatch.setattr(sermons, 'SERMONS_FILE', str(tmp_path / 's.json'))
+    monkeypatch.setattr(sermons, '_cache', None)
+    sermons.save('s1', title='The Sower', body=_SERMON,
+                 preached=['2026-02-08'])
+    win = annotations_window.AnnotationsWindow(on_navigate=lambda *a: None)
+    try:
+        assert win.select_sermon('s1')
+        win._on_duplicate_sermon(Gtk.Button())
+        copy_id = win.open_sermon_id()
+        assert copy_id not in (None, 's1')
+        copy = sermons.get(copy_id)
+        assert copy['title'] == 'The Sower (copy)'
+        assert copy['body'] == _SERMON and copy['preached'] == []
+        assert sermons.get('s1')['title'] == 'The Sower'
+    finally:
+        win.destroy()
